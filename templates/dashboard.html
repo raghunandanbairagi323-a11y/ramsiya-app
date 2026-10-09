@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>रामसिया स्मार्ट बिलिंग सिस्टम</title>
+    <link href="https://jsdelivr.net" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .header-banner { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 25px; border-radius: 0 0 25px 25px; }
+        .invoice-box { background: white; border: 2px dashed #ccd1d9; padding: 20px; border-radius: 8px; font-family: monospace; }
+        .btn-custom { border-radius: 8px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+    <div class="header-banner text-center position-relative">
+        <h2>🚀 {{ shop.shop_name }}</h2>
+        <p class="mb-0">डिजिटल स्टोर पार्टनर | ट्रायल के दिन बचे हैं: <span class="badge bg-warning text-dark">{{ days_left }} दिन</span></p>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <!-- यदि 7 दिन खत्म हो गए हैं तो स्क्रीन अपने आप लॉक हो जाएगी -->
+    {% if is_locked %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center card p-5 shadow-lg">
+            <h1 class="display-1 text-danger">🔒</h1>
+            <h3 class="text-dark fw-bold mb-3">आपका ट्रायल पीरियड समाप्त हो गया है!</h3>
+            <p class="text-muted">आगे बिलिंग चालू रखने के लिए कृपया नीचे दिए गए माध्यम से मासिक शुल्क ₹{{ admin.price }} का भुगतान करें।</p>
+            <div class="alert alert-info p-3 fw-bold fs-5">
+                UPI ID: {{ admin.upi }}
+            </div>
+            <p class="mt-2 small text-muted">भुगतान के बाद स्क्रीनशॉट हमारे व्हाट्सएप नंबर <strong>{{ admin.phone }}</strong> पर भेजें।</p>
+            <a href="https://wa.me{{ admin.phone }}" class="btn btn-success btn-lg w-100 mt-3 btn-custom">💬 व्हाट्सएप पर संपर्क करें</a>
+        </div>
+    </div>
+    {% else %}
+    
+    <div class="row">
+        <!-- स्टॉक एंट्री बॉक्स -->
+        <div class="col-md-4">
+            <div class="card p-4">
+                <h5 class="text-success mb-3">📦 स्टॉक एंट्री (Inventory)</h5>
+                <form action="/add-product" method="post">
+                    <div class="mb-2"><label class="form-label small">सामान का नाम</label><input type="text" name="name" class="form-control form-control-sm" required></div>
+                    <div class="mb-2"><label class="form-label small">कीमत (₹)</label><input type="number" step="0.01" name="price" class="form-control form-control-sm" required></div>
+                    <div class="mb-3"><label class="form-label small">मात्रा (Qty)</label><input type="number" name="stock" class="form-control form-control-sm" required></div>
+                    <button type="submit" class="btn btn-success btn-sm w-100 btn-custom">💾 स्टॉक में सेव करें</button>
+                </form>
+            </div>
+            
+            <!-- उधारी डायरी -->
+            <div class="card p-4">
+                <h5 class="text-danger mb-2">📕 उधारी खाता डायरी</h5>
+                <div class="table-responsive small">
+                    <table class="table table-sm align-middle">
+                        <thead><tr><th>नाम</th><th>बकाया</th></tr></thead>
+                        <tbody>
+                            {% for k in khatas %}
+                                <tr><td>{{ k.customer_name }}</td><td class="text-danger fw-bold">₹{{ k.total_due }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- न्यू बिल काउंटर बॉक्स -->
+        <div class="col-md-4">
+            <div class="card p-4">
+                <h5 class="text-info mb-3">🛒 न्यू बिल काउंटर</h5>
+                <div class="mb-2"><label class="form-label small">ग्राहक का नाम</label><input type="text" id="cust_name" class="form-control form-control-sm" value="कैश ग्राहक"></div>
+                <div class="mb-2">
+                    <label class="form-label small">सामान चुनें</label>
+                    <select id="prod_select" class="form-select form-select-sm" onchange="updatePrice()">
+                        <option value="">-- चुनें --</option>
+                        {% for p in products %}
+                            <option value="{{ p.name }}" data-price="{{ p.price }}">{{ p.name }} (₹{{ p.price }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-2"><label class="form-label small">कीमत (₹)</label><input type="number" id="prod_price" class="form-control form-control-sm" readonly></div>
+                <div class="mb-3"><label class="form-label small">मात्रा (Qty)</label><input type="number" id="prod_qty" value="1" class="form-control form-control-sm" min="1"></div>
+                <button onclick="addItem()" class="btn btn-info btn-sm w-100 text-white btn-custom">➕ बिल में जोड़ें</button>
+            </div>
+        </div>
+
+        <!-- इनवॉइस रसीद -->
+        <div class="col-md-4">
+            <div class="card p-4">
+                <h5 class="text-secondary mb-3">📄 प्रोफेशनल इनवॉइस</h5>
+                <div class="invoice-box" id="print-area">
+                    <div class="text-center fw-bold fs-6">*** {{ shop.shop_name }} ***</div>
+                    <div class="small text-center" style="font-size:11px;">
+                        मालिक: {{ shop.owner_name }}<br>
+                        फोन: {{ shop.phone }}<br>
+                        पता: {{ shop.address }}<br>
+                        --------------------------------
+                    </div>
+                    <div class="small" style="font-size:12px; margin: 5px 0;">
+                        दिनांक: <span id="inv_date"></span><br>
+                        ग्राहक: <span id="inv_cust">कैश ग्राहक</span><br>
+                        --------------------------------
+                    </div>
+                    <table style="width:100%; font-size:12px;" id="inv_table">
+                        <thead><tr style="border-bottom:1px dashed #000;"><th style="text-align:left;">आइटम</th><th>दर</th><th>Qty</th><th style="text-align:right;">टोटल</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                    <div class="text-end fw-bold mt-2" style="font-size:13px; border-top:1px dashed #000; padding-top:5px;">
+                        कुल राशि: ₹<span id="inv_total">0</span>
+                    </div>
+                    
+                    {% if shop.upi_id %}
+                        <div class="text-center mt-3" id="qr-container">
+                            <div class="small fw-bold" style="font-size:10px; margin-bottom:2px;">स्कैन करके भुगतान करें</div>
+                            <img id="upi-qr" src="" style="width:100px; height:100px;">
+                        </div>
+                    {% endif %}
+                    
+                    <div class="text-center small mt-3" style="font-size:10px;">*** धन्यवाद, दोबारा पधारें ***</div>
+                </div>
+                <button onclick="window.print()" class="btn btn-secondary btn-sm w-100 btn-custom mt-3">🖨️ प्रिंट बिल</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    let billItems = [];
+    let totalAmount = 0;
+
+    function updatePrice() {
+        let select = document.getElementById("prod_select");
+        let price = select.options[select.selectedIndex].getAttribute("data-price");
+        document.getElementById("prod_price").value = price || "";
+    }
+
+    // (बाकी जावास्क्रिप्ट कोडिंग कल वाली ही सेम रहेगी)
+    function addItem() {
+        let select = document.getElementById("prod_select");
+        let name = select.value;
+        let price = parseFloat(document.getElementById("prod_price").value);
+        let qty = parseInt(document.getElementById("prod_qty").value);
+        let custName = document.getElementById("cust_name").value;
+        if(!name || !price || qty <= 0) return;
+        let total = price * qty;
+        billItems.push({name, price, qty, total});
+        totalAmount += total;
+        document.getElementById("inv_cust").innerText = custName;
+        document.getElementById("inv_date").innerText = new Date().toLocaleDateString('hi-IN');
+        let tbody = document.getElementById("inv_table").getElementsByTagName("tbody");
+        let row = tbody.insertRow();
+        row.innerHTML = `<td style="text-align:left;">${name}</td><td>${price}</td><td>${qty}</td><td style="text-align:right;">₹${total}</td>`;
+        document.getElementById("inv_total").innerText = totalAmount;
+        let upiId = "{{ shop.upi_id }}";
+        if(upiId) {
+            let sName = "{{ shop.shop_name }}";
+            document.getElementById("upi-qr").src = `https://qrserver.com{encodeURIComponent(`upi://pay?pa=\${upiId}&pn=\({sName}&am=\){totalAmount}&cu=INR`)}`;
+        }
+        select.value = ""; document.getElementById("prod_price").value = ""; document.getElementById("prod_qty").value = 1;
+    }
+</script>
+</body>
+</html>
