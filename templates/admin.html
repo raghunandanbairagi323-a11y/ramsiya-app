@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8"><title>रामसिया ऑफिस - सुपर एडमिन पैनल</title>
+    <link href="https://jsdelivr.net" rel="stylesheet">
+    <style> body { background: #f8f9fa; padding: 30px; } .card { border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.05); } </style>
+</head>
+<body>
+<div class="container">
+    <h2>🚩 रामसिया सॉफ़्टवेयर हेड ऑफिस (Master Control)</h2>
+    <div class="row mt-4">
+        <!-- ⚙️ मास्टर सेटिंग्स और मल्टी-प्लान कीमतें -->
+        <div class="col-md-5">
+            <div class="card p-4 shadow-sm">
+                <h5 class="text-primary mb-3">⚙️ मास्टर सेटिंग्स और प्लान कीमतें</h5>
+                <form action="/admin/update" method="post">
+                    <div class="mb-2"><label class="small fw-bold">यूजरनेम</label><input type="text" name="user" value="{{ admin.user }}" class="form-control form-control-sm" required></div>
+                    <div class="mb-2"><label class="small fw-bold">मास्टर पासवर्ड</label><input type="text" name="password" value="{{ admin.pass }}" class="form-control form-control-sm" required></div>
+                    
+                    <div class="bg-light p-2 rounded my-2">
+                        <label class="small fw-bold text-secondary mb-1">💰 सभी प्लान की कीमतें सेट करें:</label>
+                        <div class="input-group input-group-sm mb-1"><span class="input-group-text">1 Month (₹)</span><input type="number" name="p1" value="{{ admin.p1 }}" class="form-control"></div>
+                        <div class="input-group input-group-sm mb-1"><span class="input-group-text">3 Month (₹)</span><input type="number" name="p3" value="{{ admin.p3 }}" class="form-control"></div>
+                        <div class="input-group input-group-sm mb-1"><span class="input-group-text">6 Month (₹)</span><input type="number" name="p6" value="{{ admin.p6 }}" class="form-control"></div>
+                        <div class="input-group input-group-sm mb-1"><span class="input-group-text">9 Month (₹)</span><input type="number" name="p9" value="{{ admin.p9 }}" class="form-control"></div>
+                        <div class="input-group input-group-sm mb-1"><span class="input-group-text">12 Month (₹)</span><input type="number" name="p12" value="{{ admin.p12 }}" class="form-control"></div>
+                    </div>
+
+                    <div class="mb-2"><label class="small fw-bold">एडमिन UPI ID</label><input type="text" name="upi" value="{{ admin.upi }}" class="form-control form-control-sm" required></div>
+                    <div class="mb-3"><label class="small fw-bold">व्हाट्सएप नंबर</label><input type="text" name="phone" value="{{ admin.phone }}" class="form-control form-control-sm" required></div>
+                    <button type="submit" class="btn btn-primary w-100 btn-sm">💾 सभी प्लान अपडेट करें</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 👥 दुकानदारों की लिस्ट और ऑटो एक्सपायरी डेट -->
+        <div class="col-md-7">
+            <div class="card p-4 shadow-sm">
+                <h5 class="text-success mb-3">👥 सभी दुकानदार (ऑटोमैटिक एक्सपायरी डेट)</h5>
+                <div class="table-responsive small">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>ID</th><th>दुकान</th><th>मालिक</th><th>फ़ोन</th><th>एक्सपायरी डेट</th><th>स्टेटस</th></tr></thead>
+                        <tbody>
+                            {% for s in shops %}
+                                <tr>
+                                    <td>{{ s.id }}</td>
+                                    <td><strong>{{ s.shop_name }}</strong></td>
+                                    <td>{{ s.owner_name }}</td>
+                                    <td>{{ s.phone }}</td>
+                                    <td><span class="badge bg-warning text-dark">{{ s.expiry_date }}</span></td>
+                                    <td><span class="badge bg-success">{{ s.status }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
